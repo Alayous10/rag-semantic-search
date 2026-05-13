@@ -39,8 +39,8 @@ if not api_key or api_key == "your_api_key_here":
     print("WARNING: GEMINI_API_KEY not properly set in .env")
 
 # Initialize Embeddings and LLM
-embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
-llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0.2)
+embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001", google_api_key=api_key)
+llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.2, google_api_key=api_key, convert_system_message_to_human=True)
 
 # Initialize Chroma Vector Store
 vector_store = Chroma(persist_directory=CHROMA_PATH, embedding_function=embeddings)
@@ -83,6 +83,8 @@ async def upload_document(file: UploadFile = File(...)):
         
         return {"message": "File uploaded and processed successfully", "chunks": len(chunks)}
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/chat", response_model=ChatResponse)
@@ -90,9 +92,12 @@ async def chat(request: ChatRequest):
     retriever = vector_store.as_retriever(search_kwargs={"k": 3})
     
     system_prompt = (
-        "You are an assistant for question-answering tasks. "
+        "You are an intelligent assistant for question-answering tasks. "
         "Use the following pieces of retrieved context to answer the question. "
         "If you don't know the answer, say that you don't know based on the provided document. "
+        "CRITICAL INSTRUCTION: You MUST answer the question in the EXACT SAME LANGUAGE the user used to ask the question. "
+        "If the user asks in English, your entire response must be in English. "
+        "If the user asks in Arabic, your entire response must be in Arabic. "
         "Use formatting (markdown) to make your response easy to read."
         "\n\n"
         "{context}"
@@ -110,13 +115,7 @@ async def chat(request: ChatRequest):
         response = rag_chain.invoke({"input": request.message})
         answer = response["answer"]
         
-        # Extract sources
-        contexts = response.get("context", [])
-        sources = set([doc.metadata.get("source", "Unknown Document") for doc in contexts])
-        
-        if sources:
-            source_names = [os.path.basename(s) for s in sources]
-            answer += "\n\n---\n**المصادر المستند إليها:** " + ", ".join(source_names)
+        # Sources extraction removed as per user request.
             
         return ChatResponse(reply=answer)
     except Exception as e:
