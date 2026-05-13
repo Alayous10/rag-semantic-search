@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+@theme {
+  --color-neon-cyan: #0ff;
+  --color-neon-violet: #8a2be2;
+  --color-dark-bg: #050505;
+  --color-dark-card: #0f0f13;
+  --color-dark-border: #1f1f2e;
+}
+
+@layer base {
+  :root {
+    --background: #050505;
+    --foreground: #e0e0e0;
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: Arial, Helvetica, sans-serif;
+  }
+}
+
+.cyber-border {
+  border: 1px solid var(--color-dark-border);
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.05);
+}
+
+.cyber-glow {
+  text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+}
